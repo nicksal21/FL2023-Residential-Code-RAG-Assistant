@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Florida 2023 Residential Building Code Assistant</title>
+    <script type="module" src="https://md-block.verou.me/md-block.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: lightblue;
+        }
+
+        #app {
+            max-width: 600px;
+            min-height: 100vh;
+            margin: 0 auto;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: white;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        h4 {
+            color: #555;
+            text-align: center;
+            margin-top: -10px;
+        }
+
+        hr {
+            margin: 10px 0;
+            color: #FFF
+        }
+
+        form {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        textarea {
+            padding: 10px;
+            width: 400px;
+            height: 100px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: none;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0 -10px 0;
+
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <h1>Florida 2023 Residential<br>Building Code Assistant</h1>
+        <h4>Powered by OpenAI</h4>
+
+        <!-- The form sends data to the '/submit' route using a POST request -->
+        <form action="{{ url_for('handle_data') }}" method="POST" autocomplete="off">
+            <textarea name="user_input"
+                placeholder="Ask a question about the Florida 2023 Residential Building Codes..."></textarea>
+            <button type="submit">Send to Python</button>
+        </form>
+        <hr>
+        {% if answer %}
+        <h2>Answer:</h2>
+        <md-block>{{ answer }}</md-block>
+        {% endif %}
+    </div>
+</body>
+
+</html>
