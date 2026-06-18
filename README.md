@@ -21,7 +21,7 @@ These are to be stored in a .env, but *ONLY FOR TESTING* (obviously not for prod
 ---
 ## How to use:
 1. Ask a question (related to building codes)
-2. Receive a response! :D
+2. Receive a response.
 3. The model will punt or at least provide the closest answer it can if the info cannot be found in the docs.
 ---
 ## How it works:
