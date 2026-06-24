@@ -15,10 +15,19 @@ Official code **PDFs are not included** in this repository. The app indexes **ma
 ## How it works
 
 1. `florida_residential_code_mds/` contains 46 chapter markdown files from the 2023 Florida Residential Building Code.
-2. On the first question, `app.py` chunks the markdown by headers and builds embeddings.
-3. A user submits a question with their own OpenAI API key (BYOK).
-4. The top-k similar chunks are retrieved and passed to the model as context.
-5. The model answers using only that context and cites sources when possible.
+2. `build_index.py` embeds those chapters and writes a compact `vector_index/` used at runtime.
+3. Render loads the pre-built index instead of embedding 3,000+ chunks on each deploy (fits the 512 MB free tier).
+4. A user submits a question with their own OpenAI API key (BYOK).
+5. The top-k similar chunks are retrieved and passed to the model as context.
+
+### Rebuild the search index
+
+After changing markdown files, rebuild locally and commit `vector_index/`:
+
+```bash
+export OPENAI_API_KEY=your-key-here
+python build_index.py
+```
 
 ## Optional: re-parse PDFs locally
 

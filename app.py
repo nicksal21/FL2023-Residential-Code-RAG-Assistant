@@ -3,15 +3,11 @@ from dotenv import load_dotenv
 from pathlib import Path
 import os
 import sys
-from os import listdir
-from os.path import isfile, join
 
-from langchain_text_splitters import MarkdownHeaderTextSplitter
-from langchain_core.vectorstores import InMemoryVectorStore
-from langchain_openai import OpenAIEmbeddings
 from flask import Flask, jsonify, request, render_template, redirect, url_for, session
 
-SAMPLE_DOCS_DIR = Path(__file__).parent / "florida_residential_code_mds"
+from rag_index import index_available, load_index, make_embeddings_client
+
 RETRIEVAL_K = 5
 
 app = Flask(__name__)
@@ -23,7 +19,8 @@ app.config.update(
     SESSION_COOKIE_SECURE=IS_PRODUCTION,
 )
 
-vector_store = None
+vector_index = None
+embeddings_client = None
 openai_client = None
 _openai_client_key = None
 
@@ -49,57 +46,24 @@ def resolve_api_key(form_key=None):
     return None
 
 
-def create_vector_store(api_key):
-    if not SAMPLE_DOCS_DIR.is_dir():
-        raise FileNotFoundError(
-            f"Sample docs directory not found: {SAMPLE_DOCS_DIR}"
-        )
-
-    file_paths = sorted(
-        f for f in listdir(SAMPLE_DOCS_DIR) if isfile(join(SAMPLE_DOCS_DIR, f))
-    )
-    if not file_paths:
-        raise FileNotFoundError(f"No markdown files found in {SAMPLE_DOCS_DIR}")
-
-    headers_to_split_on = [
-        ("#", "Header 1"),
-        ("##", "Header 2"),
-        ("###", "Header 3"),
-    ]
-
-    docs = []
-    for file_name in file_paths:
-        file_path = SAMPLE_DOCS_DIR / file_name
-        content = file_path.read_text(encoding="utf-8")
-        markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on)
-        md_header_splits = markdown_splitter.split_text(content)
-        for doc in md_header_splits:
-            doc.metadata["source"] = file_name
-        docs.extend(md_header_splits)
-
-    embed = OpenAIEmbeddings(model="text-embedding-3-large", api_key=api_key)
-    store = InMemoryVectorStore(embedding=embed)
-    store.add_documents(docs)
-    return store
-
-
 def ensure_ready(api_key):
-    global vector_store, openai_client, _openai_client_key
+    global vector_index, embeddings_client, openai_client, _openai_client_key
 
-    if vector_store is None:
-        vector_store = create_vector_store(api_key)
+    if vector_index is None:
+        vector_index = load_index()
 
-    if openai_client is None or _openai_client_key != api_key:
+    if embeddings_client is None or _openai_client_key != api_key:
+        embeddings_client = make_embeddings_client(api_key)
         openai_client = OpenAI(api_key=api_key)
         _openai_client_key = api_key
 
 
-def ask_question(store, client, question, k=RETRIEVAL_K):
-    results = store.similarity_search(question, k=k)
+def ask_question(index, embed_client, client, question, k=RETRIEVAL_K):
+    results = index.query(embed_client, question, k=k)
     context = "\n\n---\n\n".join(
-        f"Source: {result.metadata.get('source')}\n"
-        f"Headers: {result.metadata}\n\n"
-        f"Content: {result.page_content}"
+        f"Source: {result['metadata'].get('source')}\n"
+        f"Headers: {result['metadata']}\n\n"
+        f"Content: {result['page_content']}"
         for result in results
     )
 
@@ -126,13 +90,20 @@ Context:
 
 @app.route("/health")
 def health():
-    return jsonify({"status": "ok"}), 200
+    return jsonify(
+        {
+            "status": "ok",
+            "index_ready": index_available(),
+        }
+    ), 200
 
 
 @app.route("/")
 def home():
     answer = session.pop("answer", None)
     error = session.pop("error", None)
+    if not index_available() and not error:
+        error = "Search index is missing. Redeploy after running build_index.py."
     return render_template(
         "index.html",
         answer=answer,
@@ -160,9 +131,13 @@ def handle_data():
     if not user_input:
         return redirect(url_for("home"))
 
+    if not index_available():
+        session["error"] = "Search index is unavailable. Please try again later."
+        return redirect(url_for("home"))
+
     try:
         ensure_ready(api_key)
-        answer = ask_question(vector_store, openai_client, user_input)
+        answer = ask_question(vector_index, embeddings_client, openai_client, user_input)
         session["answer"] = answer
     except Exception:
         session["error"] = (
