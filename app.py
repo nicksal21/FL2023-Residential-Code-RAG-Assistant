@@ -11,7 +11,7 @@ from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_openai import OpenAIEmbeddings
 from flask import Flask, jsonify, request, render_template, redirect, url_for, session
 
-SAMPLE_DOCS_DIR = Path(__file__).parent / "sample_docs"
+SAMPLE_DOCS_DIR = Path(__file__).parent / "florida_residential_code_mds"
 RETRIEVAL_K = 5
 
 app = Flask(__name__)
@@ -106,11 +106,11 @@ def ask_question(store, client, question, k=RETRIEVAL_K):
     response = client.responses.create(
         model="gpt-5.5",
         instructions=(
-            "You answer questions using only the provided construction reference context. "
-            "The context is sample educational material, not an official building code. "
-            "If the context does not contain the answer, say you do not know. "
+            "You answer questions using only the provided Florida Residential Code context. "
+            "The source markdown was converted from code publications and may omit some tables "
+            "or figures. If the context does not contain the answer, say you do not know. "
             "Cite the source filename and relevant section/header when possible. "
-            "Remind the user to consult licensed professionals and local codes for real projects."
+            "Remind the user to consult licensed professionals and the official code for compliance."
         ),
         input=f"""
 Question:

@@ -1,8 +1,8 @@
 # Construction Document RAG Pipeline
 
-A Flask demo of a retrieval-augmented generation (RAG) pipeline for construction-domain Q&A. Built to explore LangChain, OpenAI embeddings, and vector search.
+A Flask demo of a retrieval-augmented generation (RAG) pipeline for Florida Residential Building Code Q&A. Built to explore LangChain, OpenAI embeddings, and vector search.
 
-This project was originally prototyped against Florida residential building code PDFs. **Those documents are not included or redistributed** — publishing them would violate copyright. The public repo instead ships **original sample markdown** in `sample_docs/` so the architecture remains demonstrable without proprietary content.
+Official code **PDFs are not included** in this repository. The app indexes **markdown chapter files** in `florida_residential_code_mds/` that were converted locally with Docling. Some tables and figures may be missing or imperfect in the conversion.
 
 ## Architecture
 
@@ -14,16 +14,15 @@ This project was originally prototyped against Florida residential building code
 
 ## How it works
 
-1. `sample_docs/` contains short, original reference material (foundations, framing, electrical/safety).
-2. On startup, `app.py` loads and chunks the markdown by headers.
-3. Chunks are embedded and stored in an in-memory vector store.
-4. A user submits a question via POST.
-5. The top-k similar chunks are retrieved and passed to the model as context.
-6. The model answers using only that context and cites sources when possible.
+1. `florida_residential_code_mds/` contains 46 chapter markdown files from the 2023 Florida Residential Building Code.
+2. On the first question, `app.py` chunks the markdown by headers and builds embeddings.
+3. A user submits a question with their own OpenAI API key (BYOK).
+4. The top-k similar chunks are retrieved and passed to the model as context.
+5. The model answers using only that context and cites sources when possible.
 
-## Optional: parse your own PDFs locally
+## Optional: re-parse PDFs locally
 
-`doc_parser.py` is a **local-only** utility using [Docling](https://github.com/docling-project/docling). Place your own licensed PDFs in `local_pdfs/` (gitignored), run the script, and review output in `local_mds/`. Do not commit copyrighted material.
+`doc_parser.py` is a **local-only** utility using [Docling](https://github.com/docling-project/docling). Place licensed PDFs in `local_pdfs/` (gitignored), run the script, and review output in `local_mds/`.
 
 ```bash
 pip install docling
@@ -57,7 +56,9 @@ Visit `http://127.0.0.1:5000`.
 
 ## Deploy (e.g. Render)
 
-The portfolio embeds this app once deployed. **You do not need to put your OpenAI API key in Render** unless you want the server to use a shared key.
+Live demo: https://fl2023-residential-code-rag-assistant.onrender.com
+
+**You do not need to put your OpenAI API key in Render** unless you want the server to use a shared key.
 
 By default, the hosted demo uses **bring-your-own-key (BYOK)**:
 
@@ -82,17 +83,11 @@ A `Procfile` and `render.yaml` are included for platforms that use them.
 
 ## Copyright note
 
-Official building codes are copyrighted publications. This repository:
-
-- Does **not** distribute code books, PDFs, or converted markdown from those sources
-- Uses **original sample content** for the live demo
-- Documents how you can run `doc_parser.py` on documents **you are licensed to use**
-
-For real compliance work, consult the authority having jurisdiction and licensed professionals.
+Official building code PDFs are not distributed in this repository. The committed markdown is text converted for a technical demo. For compliance work, consult the authority having jurisdiction, licensed professionals, and the official published code.
 
 ## Ideas for extension
 
-- Bring-your-own-document upload (user supplies text; nothing redistributed)
+- Improve Docling post-processing for tables and figure references
 - Persistent vector store (Chroma, Pinecone) instead of in-memory
 - Chat history and follow-up questions
-- Swap sample_docs for your own licensed corpus in a private deployment
+- Precompute embeddings at build time to reduce first-query latency

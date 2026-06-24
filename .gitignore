@@ -18,8 +18,9 @@ pyvenv.cfg
 .venv
 pip-selfcheck.json
 
-# Local PDF conversion (never commit copyrighted PDFs or derived markdown)
+# Granular local extractions and PDF sources (not committed)
 local_pdfs/
 local_mds/
+florida_code_mds/
 
 # End of https://www.toptal.com/developers/gitignore/api/venv,dotenv
