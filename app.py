@@ -1,15 +1,15 @@
 from openai import OpenAI
 from dotenv import load_dotenv
 from pathlib import Path
-import getpass
 import os
+import sys
 from os import listdir
 from os.path import isfile, join
 
 from langchain_text_splitters import MarkdownHeaderTextSplitter
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_openai import OpenAIEmbeddings
-from flask import Flask, request, render_template, redirect, url_for, session
+from flask import Flask, jsonify, request, render_template, redirect, url_for, session
 
 SAMPLE_DOCS_DIR = Path(__file__).parent / "sample_docs"
 RETRIEVAL_K = 5
@@ -25,6 +25,7 @@ app.config.update(
 
 vector_store = None
 openai_client = None
+_openai_client_key = None
 
 
 @app.after_request
@@ -37,15 +38,18 @@ def set_embed_headers(response):
     return response
 
 
-def load_environment_variables():
+def resolve_api_key(form_key=None):
     load_dotenv()
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        api_key = getpass.getpass("Enter your OpenAI API key: ")
-        os.environ["OPENAI_API_KEY"] = api_key
+    if form_key and form_key.strip():
+        return form_key.strip()
+    if session.get("openai_api_key"):
+        return session["openai_api_key"]
+    if os.getenv("OPENAI_API_KEY"):
+        return os.getenv("OPENAI_API_KEY")
+    return None
 
 
-def create_vector_store():
+def create_vector_store(api_key):
     if not SAMPLE_DOCS_DIR.is_dir():
         raise FileNotFoundError(
             f"Sample docs directory not found: {SAMPLE_DOCS_DIR}"
@@ -73,10 +77,21 @@ def create_vector_store():
             doc.metadata["source"] = file_name
         docs.extend(md_header_splits)
 
-    embed = OpenAIEmbeddings(model="text-embedding-3-large")
+    embed = OpenAIEmbeddings(model="text-embedding-3-large", api_key=api_key)
     store = InMemoryVectorStore(embedding=embed)
     store.add_documents(docs)
     return store
+
+
+def ensure_ready(api_key):
+    global vector_store, openai_client, _openai_client_key
+
+    if vector_store is None:
+        vector_store = create_vector_store(api_key)
+
+    if openai_client is None or _openai_client_key != api_key:
+        openai_client = OpenAI(api_key=api_key)
+        _openai_client_key = api_key
 
 
 def ask_question(store, client, question, k=RETRIEVAL_K):
@@ -109,31 +124,58 @@ Context:
     return response.output_text
 
 
-def init_app():
-    global vector_store, openai_client
-    load_environment_variables()
-    openai_client = OpenAI()
-    vector_store = create_vector_store()
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok"}), 200
 
 
 @app.route("/")
 def home():
     answer = session.pop("answer", None)
-    return render_template("index.html", answer=answer)
+    error = session.pop("error", None)
+    return render_template(
+        "index.html",
+        answer=answer,
+        error=error,
+        has_api_key=bool(resolve_api_key()),
+    )
 
 
 @app.route("/submit", methods=["POST"])
 def handle_data():
     user_input = request.form.get("user_input", "").strip()
+    api_key_input = request.form.get("openai_api_key", "").strip()
+
+    if api_key_input:
+        session["openai_api_key"] = api_key_input
+
+    api_key = resolve_api_key(api_key_input)
+    if not api_key:
+        session["error"] = (
+            "Add your OpenAI API key to use this demo. "
+            "Your key is stored only in this browser session."
+        )
+        return redirect(url_for("home"))
+
     if not user_input:
         return redirect(url_for("home"))
 
-    answer = ask_question(vector_store, openai_client, user_input)
-    session["answer"] = answer
+    try:
+        ensure_ready(api_key)
+        answer = ask_question(vector_store, openai_client, user_input)
+        session["answer"] = answer
+    except Exception:
+        session["error"] = (
+            "Could not process your question. Check your API key and try again."
+        )
+
     return redirect(url_for("home"))
 
 
-init_app()
-
 if __name__ == "__main__":
+    if not resolve_api_key() and sys.stdin.isatty():
+        print(
+            "No OPENAI_API_KEY found. You can set it in .env or enter it in the web form.",
+            file=sys.stderr,
+        )
     app.run(debug=True)

@@ -37,13 +37,25 @@
             margin-top: -10px;
         }
 
-        .disclaimer {
+        .disclaimer,
+        .notice,
+        .error {
             font-size: 0.9rem;
+            padding: 12px;
+            margin-bottom: 20px;
+        }
+
+        .disclaimer,
+        .notice {
             color: #666;
             background: #f8f9fa;
             border-left: 4px solid #007BFF;
-            padding: 12px;
-            margin-bottom: 20px;
+        }
+
+        .error {
+            color: #842029;
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
         }
 
         hr {
@@ -55,16 +67,31 @@
             margin-bottom: 20px;
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: stretch;
+            gap: 12px;
+            width: 100%;
+            max-width: 520px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        textarea,
+        input[type="password"] {
+            padding: 10px;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
         }
 
         textarea {
-            padding: 10px;
-            width: 100%;
-            max-width: 520px;
             height: 100px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
             resize: none;
         }
 
@@ -75,7 +102,7 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            margin: 10px 0 -10px 0;
+            align-self: center;
         }
 
         button:hover {
@@ -95,11 +122,36 @@
             official building codes or professional advice.
         </p>
 
+        {% if error %}
+        <p class="error">{{ error }}</p>
+        {% endif %}
+
         <form action="{{ url_for('handle_data') }}" method="POST" autocomplete="off">
-            <textarea name="user_input"
-                placeholder="Ask about foundations, framing, electrical basics, or jobsite safety..."></textarea>
+            <label for="openai_api_key">OpenAI API Key</label>
+            <input
+                id="openai_api_key"
+                type="password"
+                name="openai_api_key"
+                placeholder="{% if has_api_key %}Key saved for this session (enter to replace){% else %}sk-...{% endif %}"
+                {% if not has_api_key %}required{% endif %}
+            >
+
+            <label for="user_input">Your question</label>
+            <textarea
+                id="user_input"
+                name="user_input"
+                placeholder="Ask about foundations, framing, electrical basics, or jobsite safety..."
+                required
+            ></textarea>
+
             <button type="submit">Ask</button>
         </form>
+
+        <p class="notice">
+            Your API key is used only for this session and is not stored on the server
+            after the session ends. Usage is billed to your OpenAI account.
+        </p>
+
         <hr>
         {% if answer %}
         <h2>Answer:</h2>

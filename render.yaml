@@ -10,7 +10,5 @@ services:
         value: "3.12.0"
       - key: FLASK_ENV
         value: production
-      - key: OPENAI_API_KEY
-        sync: false
       - key: FLASK_KEY
         generateValue: true

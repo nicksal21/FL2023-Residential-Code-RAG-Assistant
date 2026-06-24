@@ -40,12 +40,14 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Create a `.env` file (never commit this):
+Optional: create a `.env` file for local development (never commit this):
 
 ```env
 OPENAI_API_KEY=your-key-here
 FLASK_KEY=your-secret-key-here
 ```
+
+If `OPENAI_API_KEY` is not set locally, enter your key in the web form instead.
 
 ```bash
 python app.py
@@ -55,12 +57,20 @@ Visit `http://127.0.0.1:5000`.
 
 ## Deploy (e.g. Render)
 
-The portfolio embeds this app at `https://construction-rag-pipeline.onrender.com` once deployed.
+The portfolio embeds this app once deployed. **You do not need to put your OpenAI API key in Render** unless you want the server to use a shared key.
+
+By default, the hosted demo uses **bring-your-own-key (BYOK)**:
+
+- The app starts without `OPENAI_API_KEY`
+- Each visitor enters their own key in the browser
+- The key is kept in the Flask session for that visit only
+
+To deploy:
 
 1. Push this repo to GitHub.
-2. In [Render](https://render.com), create a **Blueprint** from `render.yaml` or a **Web Service** with start command `gunicorn app:app`.
-3. Set `OPENAI_API_KEY` in the Render dashboard (`FLASK_KEY` can be auto-generated).
-4. After deploy, confirm the app loads and the portfolio iframe works on `https://nicksal21.github.io`.
+2. In [Render](https://render.com), create a **Web Service** with start command `gunicorn app:app`.
+3. Set `FLASK_KEY` (or let Render generate it). `OPENAI_API_KEY` is optional.
+4. Confirm `https://your-service.onrender.com/health` returns `{"status":"ok"}`.
 
 The app sets `Content-Security-Policy: frame-ancestors` for GitHub Pages and uses cross-site session cookies in production so form submissions work inside the embedded iframe.
 
@@ -68,7 +78,7 @@ The app sets `Content-Security-Policy: frame-ancestors` for GitHub Pages and use
 gunicorn app:app
 ```
 
-A `Procfile` is included for platforms that use it.
+A `Procfile` and `render.yaml` are included for platforms that use them.
 
 ## Copyright note
 
