@@ -133,8 +133,9 @@
                 id="openai_api_key"
                 type="password"
                 name="openai_api_key"
-                placeholder="{% if has_api_key %}Key saved for this session (enter to replace){% else %}sk-...{% endif %}"
+                placeholder="{% if has_api_key %}Key saved for this visit (enter to replace){% else %}sk-...{% endif %}"
                 {% if not has_api_key %}required{% endif %}
+                data-has-server-key="{{ 'true' if has_api_key else 'false' }}"
             >
 
             <label for="user_input">Your question</label>
@@ -149,8 +150,8 @@
         </form>
 
         <p class="notice">
-            Your API key is used only for this session and is not stored on the server
-            after the session ends. Usage is billed to your OpenAI account.
+            Your API key is kept only in this browser tab while the page is open and is
+            not stored on the server. Usage is billed to your OpenAI account.
         </p>
 
         <hr>
@@ -159,6 +160,49 @@
         <md-block>{{ answer }}</md-block>
         {% endif %}
     </div>
+    <script>
+        (function () {
+            const STORAGE_KEY = "openai_api_key";
+            const input = document.getElementById("openai_api_key");
+            const form = input.closest("form");
+            const hasServerKey = input.dataset.hasServerKey === "true";
+
+            function hasStoredKey() {
+                return hasServerKey || !!sessionStorage.getItem(STORAGE_KEY);
+            }
+
+            function updateKeyFieldState() {
+                if (hasStoredKey()) {
+                    input.removeAttribute("required");
+                    if (!hasServerKey) {
+                        input.placeholder = "Key saved for this visit (enter to replace)";
+                    }
+                }
+            }
+
+            input.addEventListener("input", function () {
+                const value = input.value.trim();
+                if (value) {
+                    sessionStorage.setItem(STORAGE_KEY, value);
+                    updateKeyFieldState();
+                }
+            });
+
+            form.addEventListener("submit", function () {
+                const value = input.value.trim();
+                if (value) {
+                    sessionStorage.setItem(STORAGE_KEY, value);
+                } else {
+                    const stored = sessionStorage.getItem(STORAGE_KEY);
+                    if (stored) {
+                        input.value = stored;
+                    }
+                }
+            });
+
+            updateKeyFieldState();
+        })();
+    </script>
 </body>
 
 </html>

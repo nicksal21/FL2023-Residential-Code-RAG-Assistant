@@ -39,8 +39,6 @@ def resolve_api_key(form_key=None):
     load_dotenv()
     if form_key and form_key.strip():
         return form_key.strip()
-    if session.get("openai_api_key"):
-        return session["openai_api_key"]
     if os.getenv("OPENAI_API_KEY"):
         return os.getenv("OPENAI_API_KEY")
     return None
@@ -117,14 +115,11 @@ def handle_data():
     user_input = request.form.get("user_input", "").strip()
     api_key_input = request.form.get("openai_api_key", "").strip()
 
-    if api_key_input:
-        session["openai_api_key"] = api_key_input
-
     api_key = resolve_api_key(api_key_input)
     if not api_key:
         session["error"] = (
             "Add your OpenAI API key to use this demo. "
-            "Your key is stored only in this browser session."
+            "Your key is kept in this browser tab only while the page is open."
         )
         return redirect(url_for("home"))
 

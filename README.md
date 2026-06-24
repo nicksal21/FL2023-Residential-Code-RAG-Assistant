@@ -73,7 +73,7 @@ By default, the hosted demo uses **bring-your-own-key (BYOK)**:
 
 - The app starts without `OPENAI_API_KEY`
 - Each visitor enters their own key in the browser
-- The key is kept in the Flask session for that visit only
+- The key is kept in the browser tab only while the page is open (not on the server)
 
 To deploy:
 
