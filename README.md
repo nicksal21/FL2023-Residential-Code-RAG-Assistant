@@ -1,44 +1,84 @@
-# 2023 Florida Residential Building Codes Assistant
+# Construction Document RAG Pipeline
 
-I developed this project to learn about LangChain and how it can be used for RAG pipelines.
-The goal of this applet is to provide a RAG-based assistant for answering questions about building codes.
+A Flask demo of a retrieval-augmented generation (RAG) pipeline for construction-domain Q&A. Built to explore LangChain, OpenAI embeddings, and vector search.
 
----
+This project was originally prototyped against Florida residential building code PDFs. **Those documents are not included or redistributed** — publishing them would violate copyright. The public repo instead ships **original sample markdown** in `sample_docs/` so the architecture remains demonstrable without proprietary content.
+
 ## Architecture
-Here is the following stack I used:
-- Python
- - LangChain
- - OpenAI
- - Flask
- - Docling
-- HTML/CSS
----
-## How to run:
-To just test the program, you will need:
-- An OpenAI API Key
-- A Flask Secret Key
-These are to be stored in a .env, but *ONLY FOR TESTING* (obviously not for production environments)!
----
-## How to use:
-1. Ask a question (related to building codes)
-2. Receive a response.
-3. The model will punt or at least provide the closest answer it can if the info cannot be found in the docs.
----
-## How it works:
-1. The `doc_parser.py` was used to convert the PDFs to MD files __(not present for copyright reasons)__.
-2. The main app loads the environment variables.
-3. The program reads the doc files.
-4. The files are split into overlapping chunks based on headers.
-5. Metadata is produced from each chunk.
-6. The data is converted into embeddings via OpenAI Embeddings Model.
-7. A vector store of all the data is created.
-8. The user types a question and submits it via a POST action.
-9. A similarity search of the top K (default 5) chunks is done based on the query.
-10. After reading the docs (Retrieval) GPT 5.5 crafts (Augmented) an answer (Generation) based on context, system prompts, and the query.
-11. The answer is returned and displayed!
----
-## Things to do:
-I have several ideas:
-- Expand the codes to the main body of codes (which are referenced frequently)
-- Add chat history (and more context)
-- Expand system instructions for more helpful responses
+
+- **Python** — Flask, LangChain, OpenAI
+- **Ingestion** — Markdown header-based chunking, OpenAI `text-embedding-3-large`
+- **Retrieval** — In-memory vector store, top-k similarity search
+- **Generation** — GPT with context-grounded system instructions
+- **Frontend** — HTML/CSS Flask templates
+
+## How it works
+
+1. `sample_docs/` contains short, original reference material (foundations, framing, electrical/safety).
+2. On startup, `app.py` loads and chunks the markdown by headers.
+3. Chunks are embedded and stored in an in-memory vector store.
+4. A user submits a question via POST.
+5. The top-k similar chunks are retrieved and passed to the model as context.
+6. The model answers using only that context and cites sources when possible.
+
+## Optional: parse your own PDFs locally
+
+`doc_parser.py` is a **local-only** utility using [Docling](https://github.com/docling-project/docling). Place your own licensed PDFs in `local_pdfs/` (gitignored), run the script, and review output in `local_mds/`. Do not commit copyrighted material.
+
+```bash
+pip install docling
+mkdir local_pdfs
+# add your PDFs, then:
+python doc_parser.py
+```
+
+## Run locally
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Create a `.env` file (never commit this):
+
+```env
+OPENAI_API_KEY=your-key-here
+FLASK_KEY=your-secret-key-here
+```
+
+```bash
+python app.py
+```
+
+Visit `http://127.0.0.1:5000`.
+
+## Deploy (e.g. Render)
+
+The app requires a server-side `OPENAI_API_KEY`. Set environment variables on your host:
+
+- `OPENAI_API_KEY`
+- `FLASK_KEY`
+
+```bash
+gunicorn app:app
+```
+
+A `Procfile` is included for platforms that use it.
+
+## Copyright note
+
+Official building codes are copyrighted publications. This repository:
+
+- Does **not** distribute code books, PDFs, or converted markdown from those sources
+- Uses **original sample content** for the live demo
+- Documents how you can run `doc_parser.py` on documents **you are licensed to use**
+
+For real compliance work, consult the authority having jurisdiction and licensed professionals.
+
+## Ideas for extension
+
+- Bring-your-own-document upload (user supplies text; nothing redistributed)
+- Persistent vector store (Chroma, Pinecone) instead of in-memory
+- Chat history and follow-up questions
+- Swap sample_docs for your own licensed corpus in a private deployment

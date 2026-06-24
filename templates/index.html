@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Florida 2023 Residential Building Code Assistant</title>
+    <title>Construction Document RAG Demo</title>
     <script type="module" src="https://md-block.verou.me/md-block.js"></script>
     <style>
         body {
@@ -13,7 +13,7 @@
         }
 
         #app {
-            max-width: 600px;
+            max-width: 640px;
             min-height: 100vh;
             margin: 0 auto;
             border-radius: 10px;
@@ -37,6 +37,15 @@
             margin-top: -10px;
         }
 
+        .disclaimer {
+            font-size: 0.9rem;
+            color: #666;
+            background: #f8f9fa;
+            border-left: 4px solid #007BFF;
+            padding: 12px;
+            margin-bottom: 20px;
+        }
+
         hr {
             margin: 10px 0;
             color: #FFF
@@ -51,7 +60,8 @@
 
         textarea {
             padding: 10px;
-            width: 400px;
+            width: 100%;
+            max-width: 520px;
             height: 100px;
             border: 1px solid #ccc;
             border-radius: 4px;
@@ -66,7 +76,6 @@
             border-radius: 4px;
             cursor: pointer;
             margin: 10px 0 -10px 0;
-
         }
 
         button:hover {
@@ -77,14 +86,19 @@
 
 <body>
     <div id="app">
-        <h1>Florida 2023 Residential<br>Building Code Assistant</h1>
-        <h4>Powered by OpenAI</h4>
+        <h1>Construction Document<br>RAG Demo</h1>
+        <h4>Retrieval-Augmented Generation with LangChain + OpenAI</h4>
 
-        <!-- The form sends data to the '/submit' route using a POST request -->
+        <p class="disclaimer">
+            This demo answers questions from bundled sample reference documents about
+            general residential construction. It is <strong>not</strong> a substitute for
+            official building codes or professional advice.
+        </p>
+
         <form action="{{ url_for('handle_data') }}" method="POST" autocomplete="off">
             <textarea name="user_input"
-                placeholder="Ask a question about the Florida 2023 Residential Building Codes..."></textarea>
-            <button type="submit">Send to Python</button>
+                placeholder="Ask about foundations, framing, electrical basics, or jobsite safety..."></textarea>
+            <button type="submit">Ask</button>
         </form>
         <hr>
         {% if answer %}
