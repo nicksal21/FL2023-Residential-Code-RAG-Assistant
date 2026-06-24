@@ -17,8 +17,24 @@ RETRIEVAL_K = 5
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_KEY", "dev-only-change-in-production")
 
+IS_PRODUCTION = os.getenv("FLASK_ENV") == "production" or bool(os.getenv("RENDER"))
+app.config.update(
+    SESSION_COOKIE_SAMESITE="None" if IS_PRODUCTION else "Lax",
+    SESSION_COOKIE_SECURE=IS_PRODUCTION,
+)
+
 vector_store = None
 openai_client = None
+
+
+@app.after_request
+def set_embed_headers(response):
+    response.headers["Content-Security-Policy"] = (
+        "frame-ancestors 'self' https://nicksal21.github.io https://*.github.io "
+        "http://localhost:* http://127.0.0.1:*"
+    )
+    response.headers.pop("X-Frame-Options", None)
+    return response
 
 
 def load_environment_variables():

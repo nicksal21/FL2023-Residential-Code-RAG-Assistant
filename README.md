@@ -55,10 +55,14 @@ Visit `http://127.0.0.1:5000`.
 
 ## Deploy (e.g. Render)
 
-The app requires a server-side `OPENAI_API_KEY`. Set environment variables on your host:
+The portfolio embeds this app at `https://construction-rag-pipeline.onrender.com` once deployed.
 
-- `OPENAI_API_KEY`
-- `FLASK_KEY`
+1. Push this repo to GitHub.
+2. In [Render](https://render.com), create a **Blueprint** from `render.yaml` or a **Web Service** with start command `gunicorn app:app`.
+3. Set `OPENAI_API_KEY` in the Render dashboard (`FLASK_KEY` can be auto-generated).
+4. After deploy, confirm the app loads and the portfolio iframe works on `https://nicksal21.github.io`.
+
+The app sets `Content-Security-Policy: frame-ancestors` for GitHub Pages and uses cross-site session cookies in production so form submissions work inside the embedded iframe.
 
 ```bash
 gunicorn app:app
